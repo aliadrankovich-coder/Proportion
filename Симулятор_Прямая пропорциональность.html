@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Интерактивный график: Прямая пропорциональность</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        input[type=range] {
+            -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
+            width: 100%; /* Specific width is required for Firefox. */
+            background: transparent; /* Otherwise white in Chrome */
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #4f46e5;
+            cursor: pointer;
+            margin-top: -8px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+        canvas {
+            touch-action: none; /* Prevent scrolling when touching canvas */
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex items-center justify-center p-4">
+
+    <div class="max-w-5xl w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row">
+        
+        <!-- Левая часть: График (Canvas) -->
+        <div class="flex-1 bg-slate-100 p-4 relative flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-200">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-300 p-1 relative">
+                <canvas id="graphCanvas" width="500" height="500" class="w-full h-auto max-w-[500px] max-h-[500px] cursor-crosshair"></canvas>
+                <!-- Подсказка координат -->
+                <div id="tooltip" class="absolute hidden bg-slate-800 text-white text-xs px-2 py-1 rounded pointer-events-none transform -translate-x-1/2 -translate-y-full mt-[-10px] z-10">
+                    x: 0, y: 0
+                </div>
+            </div>
+            
+            <div class="mt-4 flex items-center gap-4 text-sm text-slate-600">
+                <label class="flex items-center gap-2 cursor-pointer select-none hover:text-slate-900 transition-colors">
+                    <input type="checkbox" id="gridToggle" checked class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300">
+                    <span>Сетка</span>
+                </label>
+                <button id="resetBtn" class="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-medium transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12"/></svg>
+                    Сброс
+                </button>
+            </div>
+        </div>
+
+        <!-- Правая часть: Управление и Теория -->
+        <div class="w-full md:w-[400px] p-6 md:p-8 flex flex-col overflow-y-auto max-h-[90vh]">
+            
+            <div class="mb-8">
+                <h1 class="text-2xl font-bold text-slate-900 mb-1">Прямая пропорциональность</h1>
+                <p class="text-slate-500 text-sm">Визуализация функции <span class="font-serif italic text-slate-700">y = kx</span></p>
+            </div>
+
+            <!-- Контроллер K -->
+            <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <label for="kSlider" class="font-semibold text-slate-700">Коэффициент <span class="italic font-serif text-indigo-600 text-lg ml-1">k</span></label>
+                    <span id="kValueDisplay" class="bg-white px-3 py-1 rounded border border-slate-300 font-mono text-indigo-600 font-bold min-w-[60px] text-center">1.0</span>
+                </div>
+                
+                <div class="relative h-8 flex items-center">
+                    <input type="range" id="kSlider" min="-10" max="10" step="0.1" value="1">
+                </div>
+                <div class="flex justify-between text-xs text-slate-400 mt-1 font-mono">
+                    <span>-10</span>
+                    <span>0</span>
+                    <span>10</span>
+                </div>
+
+                <!-- Формула -->
+                <div class="mt-6 text-center">
+                    <div class="inline-block bg-white px-6 py-3 rounded-lg shadow-sm border border-indigo-100">
+                        <span class="text-slate-400 text-sm mr-2">Функция:</span>
+                        <span id="equationDisplay" class="font-serif text-2xl font-bold text-slate-800">y = x</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Информация -->
+            <div class="space-y-4 text-sm text-slate-600">
+                <h3 class="font-semibold text-slate-900 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-500"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    Свойства графика
+                </h3>
+                
+                <div id="quadrantInfo" class="p-3 bg-blue-50 text-blue-800 rounded-lg border border-blue-100 transition-colors duration-300">
+                    <span class="font-bold">I и III четверти.</span> Функция возрастает.
+                </div>
+
+                <ul class="space-y-2 list-disc pl-4 marker:text-slate-400">
+                    <li>График всегда проходит через точку <span class="font-mono bg-slate-100 px-1 rounded text-slate-800">(0; 0)</span>.</li>
+                    <li><span class="font-serif italic">k</span> отвечает за угол наклона прямой к оси <span class="font-serif italic">Ox</span>.</li>
+                </ul>
+
+                <div class="pt-4 border-t border-slate-100">
+                    <p class="text-xs text-slate-400 text-center">Перетащите слайдер или наведите курсор на график</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Константы и состояние ---
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        const kSlider = document.getElementById('kSlider');
+        const kValueDisplay = document.getElementById('kValueDisplay');
+        const equationDisplay = document.getElementById('equationDisplay');
+        const gridToggle = document.getElementById('gridToggle');
+        const resetBtn = document.getElementById('resetBtn');
+        const quadrantInfo = document.getElementById('quadrantInfo');
+        const tooltip = document.getElementById('tooltip');
+
+        let state = {
+            k: 1,
+            showGrid: true,
+            mouseX: null,
+            mouseY: null,
+            isHovering: false
+        };
+
+        // Настройки канваса
+        const width = 500;
+        const height = 500;
+        const range = 10; // От -10 до 10 по осям
+        const scale = width / (range * 2); // Пикселей на единицу
+        const centerX = width / 2;
+        const centerY = height / 2;
+
+        // --- Утилиты преобразования координат ---
+        
+        // Из математических (x, y) в канвас (px, px)
+        const toCanvasX = (x) => centerX + x * scale;
+        const toCanvasY = (y) => centerY - y * scale;
+
+        // Из канвас (px, px) в математические (x, y)
+        const toMathX = (px) => (px - centerX) / scale;
+        const toMathY = (py) => (centerY - py) / scale;
+
+        // --- Отрисовка ---
+
+        function draw() {
+            // Очистка
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, width, height);
+
+            // 1. Сетка
+            if (state.showGrid) {
+                ctx.strokeStyle = "#e2e8f0"; // slate-200
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                
+                // Вертикальные линии
+                for (let x = -range; x <= range; x++) {
+                    if (x === 0) continue;
+                    let px = toCanvasX(x);
+                    ctx.moveTo(px, 0);
+                    ctx.lineTo(px, height);
+                }
+                // Горизонтальные линии
+                for (let y = -range; y <= range; y++) {
+                    if (y === 0) continue;
+                    let py = toCanvasY(y);
+                    ctx.moveTo(0, py);
+                    ctx.lineTo(width, py);
+                }
+                ctx.stroke();
+            }
+
+            // 2. Оси координат
+            ctx.strokeStyle = "#475569"; // slate-600
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            // Ось X
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(width, centerY);
+            // Стрелка X
+            ctx.moveTo(width - 10, centerY - 5);
+            ctx.lineTo(width, centerY);
+            ctx.lineTo(width - 10, centerY + 5);
+
+            // Ось Y
+            ctx.moveTo(centerX, height);
+            ctx.lineTo(centerX, 0);
+            // Стрелка Y
+            ctx.moveTo(centerX - 5, 10);
+            ctx.lineTo(centerX, 0);
+            ctx.lineTo(centerX + 5, 10);
+            
+            ctx.stroke();
+
+            // Подписи осей
+            ctx.fillStyle = "#1e293b"; // slate-800
+            ctx.font = "bold 14px Inter, sans-serif";
+            ctx.fillText("x", width - 15, centerY + 20);
+            ctx.fillText("y", centerX + 15, 15);
+            ctx.font = "12px Inter, sans-serif";
+            ctx.fillStyle = "#64748b";
+            ctx.fillText("0", centerX - 12, centerY + 15);
+
+            // 3. График функции y = kx
+            ctx.strokeStyle = "#4f46e5"; // indigo-600
+            ctx.lineWidth = 3;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+
+            // Вычисляем крайние точки линии чтобы она уходила за пределы холста
+            // Проверяем границы холста, чтобы линия рисовалась корректно при крутых наклонах
+            let xStart = -range;
+            let yStart = state.k * xStart;
+            let xEnd = range;
+            let yEnd = state.k * xEnd;
+            
+            ctx.moveTo(toCanvasX(xStart), toCanvasY(yStart));
+            ctx.lineTo(toCanvasX(xEnd), toCanvasY(yEnd));
+            ctx.stroke();
+
+            // 4. Интерактивная точка (если мышь над канвасом)
+            if (state.isHovering && state.mouseX !== null) {
+                // Находим ближайшую точку на прямой к курсору мыши
+                // Для простоты, мы будем брать X курсора и искать соответствующий Y на прямой
+                let mX = toMathX(state.mouseX);
+                
+                // Привязка к сетке для красоты (опционально, если близко к целому числу)
+                if (Math.abs(mX - Math.round(mX)) < 0.1) {
+                    mX = Math.round(mX);
+                }
+                
+                let mY = state.k * mX;
+
+                // Рисуем точку
+                let pX = toCanvasX(mX);
+                let pY = toCanvasY(mY);
+
+                // Проверяем, не вышла ли точка за пределы видимости
+                if (Math.abs(mY) <= range && Math.abs(mX) <= range) {
+                    // Пунктирные проекции
+                    ctx.strokeStyle = "#ec4899"; // pink-500
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([4, 4]);
+                    ctx.beginPath();
+                    ctx.moveTo(pX, centerY);
+                    ctx.lineTo(pX, pY);
+                    ctx.lineTo(centerX, pY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // Сама точка
+                    ctx.fillStyle = "#ec4899";
+                    ctx.beginPath();
+                    ctx.arc(pX, pY, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = "white";
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Обновляем тултип
+                    updateTooltip(pX, pY, mX, mY);
+                } else {
+                    hideTooltip();
+                }
+            } else {
+                // Если мышь не наведена, рисуем опорную точку (например, x=2 или x=3)
+                // Чтобы график не выглядел пустым
+                let demoX = 2;
+                let demoY = state.k * demoX;
+                if (Math.abs(demoY) <= range) {
+                    let pX = toCanvasX(demoX);
+                    let pY = toCanvasY(demoY);
+                    
+                    ctx.fillStyle = "#4f46e5";
+                    ctx.beginPath();
+                    ctx.arc(pX, pY, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                hideTooltip();
+            }
+        }
+
+        // --- Логика UI ---
+
+        function updateUI() {
+            // Текст слайдера
+            kValueDisplay.textContent = state.k;
+            
+            // Формула
+            let kText = "";
+            if (state.k == 0) kText = "0";
+            else if (state.k == 1) kText = "x";
+            else if (state.k == -1) kText = "-x";
+            else kText = `${state.k}x`;
+            equationDisplay.textContent = `y = ${kText}`;
+
+            // Описание четвертей
+            if (state.k > 0) {
+                quadrantInfo.className = "p-3 bg-green-50 text-green-800 rounded-lg border border-green-100 transition-colors duration-300";
+                quadrantInfo.innerHTML = '<span class="font-bold">I и III четверти.</span> Функция возрастает (поднимается вверх).';
+            } else if (state.k < 0) {
+                quadrantInfo.className = "p-3 bg-orange-50 text-orange-800 rounded-lg border border-orange-100 transition-colors duration-300";
+                quadrantInfo.innerHTML = '<span class="font-bold">II и IV четверти.</span> Функция убывает (спускается вниз).';
+            } else {
+                quadrantInfo.className = "p-3 bg-slate-100 text-slate-800 rounded-lg border border-slate-200 transition-colors duration-300";
+                quadrantInfo.innerHTML = '<span class="font-bold">Совпадает с осью X.</span> y всегда равен 0.';
+            }
+
+            draw();
+        }
+
+        function updateTooltip(px, py, mx, my) {
+            tooltip.style.display = 'block';
+            tooltip.style.left = px + 'px'; // Относительно родителя canvas
+            tooltip.style.top = py + 'px';
+            tooltip.textContent = `(${mx.toFixed(1)}; ${my.toFixed(1)})`;
+        }
+
+        function hideTooltip() {
+            tooltip.style.display = 'none';
+        }
+
+        // --- Обработчики событий ---
+
+        kSlider.addEventListener('input', (e) => {
+            state.k = parseFloat(e.target.value);
+            updateUI();
+        });
+
+        gridToggle.addEventListener('change', (e) => {
+            state.showGrid = e.target.checked;
+            draw();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            state.k = 1;
+            kSlider.value = 1;
+            gridToggle.checked = true;
+            state.showGrid = true;
+            updateUI();
+        });
+
+        // Мышь над канвасом
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            // Масштабирование координат мыши с учетом CSS размеров канваса
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            state.mouseX = (e.clientX - rect.left) * scaleX;
+            state.mouseY = (e.clientY - rect.top) * scaleY;
+            state.isHovering = true;
+            draw();
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            state.isHovering = false;
+            state.mouseX = null;
+            draw();
+        });
+
+        // Инициализация
+        updateUI();
+
+    </script>
+</body>
+</html>
+
